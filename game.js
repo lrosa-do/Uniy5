@@ -68,27 +68,37 @@ class EnemyScript extends Component
         this.speed = 6;
         this.speedTorque=20;
         this.player =null; 
+        this.animation = 0;
+        this.size = RandomFloat(0.5, 1.0);
     }
 
     ready()
     {
         this.player = this.gameObject.scene.Find('Player');
-        let scaler  = new TweenProperty(this.gameObject.transform.scale, ['x','y'], 0.9, 1.2, 1.9, Ease.SineIn);
-        let scaler2 = new TweenProperty(this.gameObject.transform.scale, ['x','y'], 1.2, 0.9, 1.9, Ease.SineOut);
-        scaler.start();
-        scaler.OnComplete = () =>
-        {
-           scaler2.start();
-        }
-        scaler2.OnComplete = () =>
-        {
-            scaler.start();
-        }
+        // let scaler  = new TweenProperty(this.gameObject.transform.scale, ['x','y'], 0.9, 1.2, 1.9, Ease.SineIn);
+        // let scaler2 = new TweenProperty(this.gameObject.transform.scale, ['x','y'], 1.2, 0.9, 1.9, Ease.SineOut);
+        // scaler.start();
+        // scaler.OnComplete = () =>
+        // {
+        //    scaler2.start();
+        // }
+        // scaler2.OnComplete = () =>
+        // {
+        //     scaler.start();
+        // }
         
     }
 
     update(dt)
     {
+
+        this.animation += dt * 0.1;
+        let pump = PingPong(this.animation,0.3);
+
+        this.gameObject.transform.scale.x = this.size + pump;
+        this.gameObject.transform.scale.y = this.size + pump;
+
+
         let player_pos = this.player.transform.position;
         let distance = Vector2.Distance(this.gameObject.transform.position, player_pos);
         let angle = GetAngle(this.gameObject.transform.position.x, this.gameObject.transform.position.y, player_pos.x, player_pos.y);
