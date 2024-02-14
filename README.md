@@ -11,31 +11,7 @@ Features
     Support for sprites, shapes, and transformations.
     Scene management for switching between game screens.
 
-Sure, here's a README file template for your JavaScript project using p5.js:
-Game Framework using p5.js
 
-This is a simple game framework built using JavaScript and the p5.js library. It provides a flexible structure for creating games with components and animations.
-Table of Contents
-
-    Features
-    Getting Started
-        Prerequisites
-        Installation
-    Usage
-    Components
-    Animations
-    Examples
-    Contributing
-    License
-    Acknowledgements
-
-Features
-
-    Object-oriented structure for game development.
-    Components system for organizing game elements.
-    Tween animations for smooth transitions and effects.
-    Support for sprites, shapes, and transformations.
-    Scene management for switching between game screens.
 
 The framework includes several built-in components for game objects:
 
