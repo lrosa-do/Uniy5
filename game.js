@@ -26,13 +26,19 @@ class PlayerScript extends Component
       
 
         let distance = Vector2.Distance(this.gameObject.transform.position, this.target);
+        let acc = (distance/100);
 
-        this.gameObject.transform.pointToMouse(dt * 0.5 * (distance/100) , -90);
+        if (acc>4)
+        {
+            acc = 4;
+        }
+
+        this.gameObject.transform.pointToMouse(dt * 0.5 * acc , -90);
 
 
         if (distance > 20)
         {
-            this.gameObject.transform.movex(this.speed * dt * (distance/100), this.gameObject.transform.rotation+90);
+            this.gameObject.transform.movex(this.speed * dt * acc, this.gameObject.transform.rotation+90);
         }
 
         // if (keyIsDown(LEFT_ARROW))
@@ -54,6 +60,47 @@ class PlayerScript extends Component
     }
 }
 
+class EnemyScript extends Component
+{
+    constructor()
+    {
+        super('EnemyScript');
+        this.speed = 6;
+        this.speedTorque=20;
+        this.player =null; 
+    }
+
+    ready()
+    {
+        this.player = this.gameObject.scene.Find('Player');
+        let scaler  = new TweenProperty(this.gameObject.transform.scale, ['x','y'], 0.9, 1.2, 1.9, Ease.SineIn);
+        let scaler2 = new TweenProperty(this.gameObject.transform.scale, ['x','y'], 1.2, 0.9, 1.9, Ease.SineOut);
+        scaler.start();
+        scaler.OnComplete = () =>
+        {
+           scaler2.start();
+        }
+        scaler2.OnComplete = () =>
+        {
+            scaler.start();
+        }
+        
+    }
+
+    update(dt)
+    {
+        let player_pos = this.player.transform.position;
+        let distance = Vector2.Distance(this.gameObject.transform.position, player_pos);
+        let angle = GetAngle(this.gameObject.transform.position.x, this.gameObject.transform.position.y, player_pos.x, player_pos.y);
+        this.gameObject.transform.rotation+=this.speedTorque*dt;
+        if (distance > 20)
+        {
+            this.gameObject.transform.movex(this.speed * dt, angle);
+        }
+    }
+}
+
+
 
 class Kickback extends Component 
 {
@@ -69,8 +116,8 @@ class Kickback extends Component
     {
         this.y = this.gameObject.transform.position.y;
 
-        this.tweenStart = new Tween(this.gameObject.transform.position, 'y', this.y,this.y+10, 0.5,Ease.Linear);
-        this.tweenEnd = new Tween(this.gameObject.transform.position, 'y',  this.y+10,this.y,1,Ease.Linear);
+        this.tweenStart = new TweenProperty(this.gameObject.transform.position, ['y'], this.y,this.y+10, 0.5,Ease.Linear);
+        this.tweenEnd = new TweenProperty(this.gameObject.transform.position, ['y'],  this.y+10,this.y,1,Ease.Linear);
 
         if (this.tweenStart)
         {
@@ -106,14 +153,12 @@ class BulletScript extends Component
     constructor(x,y,angle)
     {
         super('BullerScript');
-        this.speed = 25;
-        this.acceleration = 5.5;
+        this.speed = 80;
+        this.acceleration = 0.1;
         this.x = x;
         this.y = y;
         this.angle = angle; 
-        this.kickbackForce = 5; // Força inicial do coice
-        this.kickbackDuration = 0.1; // Duração do coice em segundos
-        this.kickbackStartTime = 0;
+
    
     }
 
@@ -124,13 +169,13 @@ class BulletScript extends Component
         this.gameObject.transform.rotation = this.angle -90;
         this.gameObject.AddComponent(new Deletor(10));
         this.gameObject.AddComponent(new Sprite(Game.GetImage('bullet_orange')));
-        let action1 = new Tween(this.gameObject.transform.scale, 'x', 0.1, 2, 2, Ease.Linear);
+        let action1 = new TweenProperty(this.gameObject.transform.scale, 'x', 0.1, 2, 2, Ease.Linear);
         action1.start();
         action1.OnComplete = () =>
         {
             action1.remove();
         }
-        let action2 = new Tween(this.gameObject.transform.scale, 'y', 0.1, 2, 2, Ease.Linear);
+        let action2 = new TweenProperty(this.gameObject.transform.scale, 'y', 0.1, 2, 2, Ease.Linear);
         action2.start();
         action2.OnComplete = () =>
         {
@@ -142,8 +187,8 @@ class BulletScript extends Component
 
     update(dt)
     {
-        this.acceleration += this.speed * dt;
-        this.gameObject.transform.movex(this.acceleration  * dt, this.angle);
+        this.acceleration = this.speed * dt;
+        this.gameObject.transform.movex(this.acceleration , this.angle);
     }
 
 }
@@ -193,14 +238,22 @@ class MainScene extends Scene
         this.gamePlayer = player;
         this.leftCano = Leftcano;
         this.rightCano = Rightcano;
+
+        let enemy = new GameObject('Enemy');
+        enemy.transform.position.x = 0;
+        enemy.transform.position.y = Height/2;
+        enemy.AddComponent(new EnemyScript());
+        enemy.AddComponent(new Sprite(Game.GetImage('ufo')));
+        enemy.CenterBySprite();
+        this.Add(enemy);
         
     }
     update(dt)
     {
     
 
-       let pointA = this.rightCano.GetWorldPoint(6,-4);
-       let pointB = this.leftCano.GetWorldPoint(6,-4);
+       let pointA = this.rightCano.GetWorldPoint(6,-6);
+       let pointB = this.leftCano.GetWorldPoint(6,-6);
        let point = this.gamePlayer.GetWorldPoint(50,-10);
        let angle = this.gamePlayer.transform.rotation ;
        let in_angle =  GetAngle(point.x, point.y,  mouseX, mouseY) - 90;
@@ -210,8 +263,8 @@ class MainScene extends Scene
 
         // noStroke();
         // fill("red");
-        // circle(pointA.x, pointA.y, 5);
-        // circle(pointB.x, pointB.y, 5);
+        //  circle(pointA.x, pointA.y, 5);
+        //  circle(pointB.x, pointB.y, 5);
         // circle(point.x, point.y, 5);
 
     //     text(`${int(angleDifference)} ${int(angle)} ${int(in_angle)} `, 220, 70);

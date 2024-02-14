@@ -33,13 +33,59 @@ class Action
 }
 
 
+
 class Tween extends Action
 {
-    constructor(Object,property,startValue,endValue,duration,ease) 
+    constructor(startValue,endValue,duration,ease) 
     {
       super('Tween');
+      this.startValue = startValue;
+      this.endValue = endValue;
+      this.duration = duration || 1000; // Default duration of 1 second
+      this.easingFunction = ease || Ease.Linear;
+    }
+  
+    start() 
+    {
+      this.elapsed = 0;
+      this.finished = false;
+      this.play=true;
+      this.OnStart();
+      return this;
+    }
+  
+    update(deltaTime) 
+    {
+        
+      if (this.finished || this.done || !this.play) return;
+  
+      this.elapsed += deltaTime;
+  
+      const progress = Math.min(this.elapsed / this.duration, 1); 
+  
+      const easedProgress = this.easingFunction(progress);
+      const interpolatedValue = this.startValue + (this.endValue - this.startValue) * easedProgress;
+  
+      this.OnProgress(interpolatedValue);
+   
+      if (progress >= 1) 
+      {
+        this.finished = true;
+        this.OnComplete();
+        this.play=false;
+      }
+    }
+  
+  }
+  
+
+class TweenProperty extends Action
+{
+    constructor(Object,propertys,startValue,endValue,duration,ease) 
+    {
+      super('TweenProperty');
       this.object = Object;
-      this.property = property;
+      this.propertys = propertys;
       this.startValue = startValue;
       this.endValue = endValue;
       this.duration = duration || 1000; // Default duration of 1 second
@@ -70,10 +116,15 @@ class Tween extends Action
       this.OnProgress(interpolatedValue);
       if (this.object!=null)
       {
-            if (this.object.hasOwnProperty(this.property))
-            {
-                this.object[this.property]=interpolatedValue;
-            }
+           for (let i=0; i<this.propertys.length; i++)
+           {
+                let property = this.propertys[i];
+
+                if (this.object.hasOwnProperty(property))
+                {
+                    this.object[property]=interpolatedValue;
+                }
+           }
       }
   
       if (progress >= 1) 
@@ -85,7 +136,6 @@ class Tween extends Action
     }
   
   }
-  
 
 
 class Component
@@ -208,6 +258,9 @@ class Sprite extends Component
         this.off_y = off_y || 0;
         this.clip = new Bound(0,0,1,1);
         this.useClip = false;
+        this.red=255;
+        this.green=255;
+        this.blue=255;
     }
 
     SetOffSet(x, y)
@@ -224,6 +277,7 @@ class Sprite extends Component
 
     render()
     {
+        tint(this.red, this.green, this.blue);
         if (this.useClip)
         {
             image(this.image, this.off_x, this.off_y, this.clip.width, this.clip.height, 
@@ -341,6 +395,7 @@ class GameObject
         this.children=[];
         this.transform = new Transform();
         this.debug = false;
+        this.scene = null;
     }
 
     done()
@@ -378,8 +433,8 @@ class GameObject
     Add(child)
     {
         this.children.push(child);
+        child.scene = this.scene;
         child.parent = this;
-        child.ready();
     }
 
     Remove(child)
@@ -422,7 +477,6 @@ class GameObject
     {
         this.components[component.type] = component;
         component.gameObject = this;
-        component.ready();
         this.componentsList.push(component);
     }
 
@@ -458,6 +512,8 @@ class GameObject
         }
 
     }
+
+
 
     render()
     {
@@ -499,6 +555,19 @@ class GameObject
             rect(this.worldBound.x, this.worldBound.y, this.worldBound.width, this.worldBound.height);
         }
     }
+    OnReady()
+    {
+      
+        for (let child of this.children)
+        {
+            child.OnReady();
+        }
+        for (let i in this.components)
+        {
+            this.components[i].ready();
+        }
+        this.ready();
+    }
 }
 
 class Scene
@@ -513,11 +582,13 @@ class Scene
 
     Add(gameObject)
     {
+      
         this.queueList.push(gameObject);
     }
 
     Remove(gameObject)
     {
+        gameObject.scene = null;
         this.removeList.push(gameObject);
     }
 
@@ -567,7 +638,8 @@ class Scene
 
         for (let gameObject of this.queueList)
         {
-            gameObject.ready();
+            gameObject.scene = this;
+            gameObject.OnReady();
             this.gameObjects.push(gameObject);
         }
         this.queueList = [];
@@ -733,6 +805,15 @@ class Game
     static RemoveScene(name)
     {
         delete Game.scenes[name];
+    }
+
+    static SceneFindGameObject(name)
+    {
+       if (Game.currentScene)
+       {
+           return Game.currentScene.Find(name);
+       }
+         return null;
     }
 
     static GetScene(name)

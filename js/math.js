@@ -621,7 +621,7 @@ class Ease
   
 	static BounceIn(t) 
 	{
-	  return 1 - BounceOut(1 - t);
+	  return 1 - Ease.BounceOut(1 - t);
 	}
   
 	static BounceOut(t) 
@@ -643,8 +643,8 @@ class Ease
   
 	static BounceInOut(t) 
 	{
-	  if (t < 0.5) return this.BounceIn(t * 2) * 0.5;
-	  return this.BounceOut(t * 2 - 1) * 0.5 + 0.5;
+	  if (t < 0.5) return Ease.BounceIn(t * 2) * 0.5;
+	  return Ease.BounceOut(t * 2 - 1) * 0.5 + 0.5;
 	}
   
 	static ElasticIn(t) 
