@@ -347,6 +347,12 @@ class MainScene extends Scene
         
         this.createEnemy();
 
+        this.polyA=new Polygon();
+        this.polyA.setBox(25, 25,50,50);
+
+        this.polyB=new Polygon();
+        this.polyB.setCircle(50, 50, 50,8);
+
        
 
       
@@ -433,6 +439,44 @@ class MainScene extends Scene
         textAlign(LEFT, CENTER);
         let fps =int( frameRate());
         text(` ${fps}  ${this.name} ${this.Count()}`, 20, 20);
+
+
+
+
+
+
+        /*
+
+        this.matrix.identity();
+			this.matrix.translate(this.position.x, this.position.y);
+			let spin = RAD(this.rotation);
+			this.matrix.rotate(spin);
+			this.matrix.scale(this.scale.x, this.scale.y);
+			this.matrix.skew(this.skew.x, this.skew.y);
+			this.matrix.translate(-this.origin.x, -this.origin.y);
+        */
+
+
+        let matrixB = new Matrix2D();
+        matrixB.identity();
+        matrixB.translate(mouseX,mouseY);
+
+        
+        this.polyB.transform(this.gamePlayer.transform.matrix);
+        this.polyA.transform(matrixB);
+
+        if (this.polyA.collide(this.polyB))
+        {
+           stroke(255,0,0);
+        } else 
+        {
+            stroke(0,255,0);
+        }
+
+        this.polyA.render();
+        this.polyB.render();
+
+       
 
         
     }

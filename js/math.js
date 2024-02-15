@@ -527,6 +527,127 @@ class Vector2
 	}
 }
 
+
+//returns the min and max projection values of a shape onto an axis
+function projShapeOntoAxis(axis, vertex)
+{
+    let min = Vector2.Dot(axis, vertex[0]);
+    let max = min;
+    for(let i=0; i<vertex.length; i++)
+    {
+        let p = Vector2.Dot(axis, vertex[i]);
+        if(p<min)
+        {
+            min = p;
+        } 
+        if(p>max)
+        {
+            max = p;
+        }
+    }
+    return {
+        min: min,
+        max: max
+    }
+}
+
+//applying the separating axis theorem on two objects
+function SAT(a, b)
+{
+    let axes = [];
+    for(let i=0; i<a.length; i++)
+    {
+        let j = (i+1)%a.length;
+        let edge = Vector2.Sub(a[j], a[i]);
+        axes.push(Vector2.Normalize(edge));
+    }
+    for(let i=0; i<b.length; i++)
+    {
+        let j = (i+1)%b.length;
+        let edge = Vector2.Sub(b[j], b[i]);
+        axes.push(Vector2.Normalize(edge));
+    }
+    for(let i=0; i<axes.length; i++)
+    {
+        let axis = axes[i];
+        let p1 = projShapeOntoAxis(axis, a);
+        let p2 = projShapeOntoAxis(axis, b);
+        if(p1.max<p2.min || p1.min>p2.max)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+class Polygon
+{
+	constructor()
+	{
+		this.vertices = [];
+		this.worldVertices = [];
+	}
+	setBox(x,y,w,h)
+	{
+		this.vertices.push(new Vector2(x,y));
+		this.vertices.push(new Vector2(x+w,y));
+		this.vertices.push(new Vector2(x+w,y+h));
+		this.vertices.push(new Vector2(x,y+h));
+		this.worldVertices.push(new Vector2(x,y));
+		this.worldVertices.push(new Vector2(x+w,y));
+		this.worldVertices.push(new Vector2(x+w,y+h));
+		this.worldVertices.push(new Vector2(x,y+h));
+	}
+	setCircle(x,y,radius,segments)
+	{
+		let angle = PI2 / segments;
+		for (let i=0;i<segments;i++)
+		{
+			this.vertices.push(new Vector2(x+Math.cos(angle*i)*radius,y+Math.sin(angle*i)*radius));
+			this.worldVertices.push(new Vector2(x+Math.cos(angle*i)*radius,y+Math.sin(angle*i)*radius));
+		}
+	}
+	transform(mat)
+	{
+		for (let i=0;i<this.vertices.length;i++)
+		{
+			this.worldVertices[i] = mat.transformPoint(this.vertices[i].x,this.vertices[i].y);
+			//this.worldVertices[i] = mat.set_pointTransform(this.vertices[i].x,this.vertices[i].y,this.vertices[i]);
+		}
+	}
+	addPoint(x,y)
+	{
+		this.vertices.push(new Vector2(x,y));
+		this.worldVertices.push(new Vector2(x,y));
+	}
+
+	render ()
+	{
+		//fill(255,0,255);
+		for (let i=0;i<this.worldVertices.length;i++)
+		{
+			let next = i+1;
+			if (next == this.worldVertices.length) next = 0;
+			line(this.worldVertices[i].x,this.worldVertices[i].y,this.worldVertices[next].x,this.worldVertices[next].y);
+		}
+		//stroke(255,0,0);
+		for (let i=0;i<this.vertices.length;i++)
+		{
+			let next = i+1;
+			if (next == this.vertices.length) next = 0;
+			line(this.vertices[i].x,this.vertices[i].y,this.vertices[next].x,this.vertices[next].y);
+		}
+
+
+	}
+	collide(p)
+	{
+		return SAT(this.worldVertices,p.worldVertices);
+	
+	}
+}
+
+
 function getPowIn(t,pow) 
 {
 		return Math.pow(t,pow);

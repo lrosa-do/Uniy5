@@ -98,6 +98,44 @@ class AnimationAction extends Action
     }
 }
 
+
+
+
+// function overlapOnAxis(a, b, axis)
+// {
+//     let aMin = projShapeOntoAxis(a[0].x, a[0].y, axis.x, axis.y);
+//     let aMax = aMin;
+//     let bMin = projShapeOntoAxis(b[0].x, b[0].y, axis.x, axis.y);
+//     let bMax = bMin;
+//     for (let i = 0; i < a.length; i++)
+//     {
+//         let p = projShapeOntoAxis(a[i].x, a[i].y, axis.x, axis.y);
+//         if (p < aMin)
+//         {
+//             aMin = p;
+//         } else if (p > aMax)
+//         {
+//             aMax = p;
+//         }
+//     }
+
+//     for (let i = 0; i < b.length; i++)
+//     {
+//         let p = projShapeOntoAxis(b[i].x, b[i].y, axis.x, axis.y);
+//         if (p < bMin)
+//         {
+//             bMin = p;
+//         } else if (p > bMax)
+//         {
+//             bMax = p;
+//         }
+//     }
+
+//     return (aMin <= bMax && aMax >= bMin);
+// }
+
+
+
 class Tween extends Action
 {
     constructor(startValue,endValue,duration,ease) 
