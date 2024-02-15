@@ -412,16 +412,19 @@ class Mask
         this.type=type;
         this.off_x = off_x || 0;
         this.off_y = off_y || 0;
+        this.poly = new Polygon();
      
     }
 }
 
 class CircleMask extends Mask
 {
-    constructor(radius,off_x,off_y)
+    constructor(radius,off_x,off_y,quality)
     {
         super('Circle',off_x,off_y);
         this.radius = radius;
+        this.quality = quality || 10;
+        this.poly.setCircle(this.off_x, this.off_y, this.radius, this.quality);
 
     }
 }
@@ -433,6 +436,7 @@ class RectMask extends Mask
         super('Rect',off_x,off_y);
         this.width = width;
         this.height = height;
+        this.poly.setBox(this.off_x, this.off_y, this.width, this.height);
     }
 }
 
@@ -476,13 +480,6 @@ class Collider extends Component
     // }
 
 
-    getPivot()
-    {
-        //this.pivot = this.gameObject.matrix.set_pointTransform(this.mask.off_x, this.mask.off_y, this.mask.pivot);
-        this.pivot.x = -this.mask.off_x + this.gameObject.transform.position.x;
-        this.pivot.y = -this.mask.off_y + this.gameObject.transform.position.y;
-        return this.pivot;
-    }
 
 
  
@@ -490,36 +487,36 @@ class Collider extends Component
     {
         if (!same_group_and_mask(this.group, this.id_mask, other))
         {
-        let pointA = this.getPivot();
-        let pointB = other.getPivot();
-        let x = pointA.x;
-        let y = pointA.y;
-        let other_x = pointB.x;
-        let other_y = pointB.y;
+            let matA = this.gameObject.matrix;
+            let matB = other.gameObject.matrix;
+            this.mask.poly.transform(matA);
+            other.mask.poly.transform(matB);
+
+            return this.mask.poly.collide(other.mask.poly);
        
 
-            if (this.mask.type === 'Circle')
-            {
-                if (other.mask.type === 'Circle')
-                {
-                    return CircleInCircle(x, y, this.mask.radius, other_x, other_y, other.mask.radius);
-                }
-                if (other.mask.type === 'Rect')
-                {
-                    return CircleInRect(x, y, this.mask.radius, other_x, other_y, other.mask.width, other.mask.height);
-                }
-            } else
-            if (this.mask.type === 'Rect')
-            {
-                if (other.mask.type === 'Circle')
-                {
-                    return CircleInRect(other_x, other_y, other.mask.radius, x, y, this.mask.width, this.mask.height);
-                }
-                if (other.mask.type === 'Rect')
-                {
-                    return RectInRect(x, y, this.mask.width, this.mask.height, other_x, other_y, other.mask.width, other.mask.height);
-                }
-            }
+            // if (this.mask.type === 'Circle')
+            // {
+            //     if (other.mask.type === 'Circle')
+            //     {
+            //         return CircleInCircle(x, y, this.mask.radius, other_x, other_y, other.mask.radius);
+            //     }
+            //     if (other.mask.type === 'Rect')
+            //     {
+            //         return CircleInRect(x, y, this.mask.radius, other_x, other_y, other.mask.width, other.mask.height);
+            //     }
+            // } else
+            // if (this.mask.type === 'Rect')
+            // {
+            //     if (other.mask.type === 'Circle')
+            //     {
+            //         return CircleInRect(other_x, other_y, other.mask.radius, x, y, this.mask.width, this.mask.height);
+            //     }
+            //     if (other.mask.type === 'Rect')
+            //     {
+            //         return RectInRect(x, y, this.mask.width, this.mask.height, other_x, other_y, other.mask.width, other.mask.height);
+            //     }
+            // }
         }
 
         return false;
@@ -826,7 +823,7 @@ class GameObject
         for (let i in this.components)
         {
         
-                this.components[i].render();
+            this.components[i].render();
         }
         
         for (let child of this.children)
@@ -855,6 +852,16 @@ class GameObject
             stroke("blue");
             rect(this.worldBound.x, this.worldBound.y, this.worldBound.width, this.worldBound.height);
         }
+
+        // let col =this.GetComponent('Collider');
+        // if (col)
+        // {
+        //  //   col.mask.poly.transform(matrix);
+        //    stroke("blue");
+        //     col.mask.poly.render();
+            
+        // }
+
 
        
     }

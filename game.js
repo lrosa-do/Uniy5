@@ -25,7 +25,7 @@ class PlayerScript extends ScriptComponent
     ready()
     {
         console.log('PlayerScript ready');
-        this.gameObject.AddComponent(new Collider(new CircleMask(50,0,0)),PLAYER_GROUP,BULLET_PLAYER_MASK | ENEMY_MASK);
+        this.gameObject.AddComponent(new Collider(new CircleMask(50,50,50)),PLAYER_GROUP,BULLET_PLAYER_MASK | ENEMY_MASK);
         this.gameObject.AddComponent(new Sprite(Game.GetImage('player')));
         this.gameObject.CenterBySprite();
 
@@ -85,7 +85,7 @@ class EnemyScript extends ScriptComponent
     {
         this.player = this.gameObject.scene.Find('Player');
         this.gameObject.AddComponent(new Sprite(Game.GetImage('ufo')));
-        this.gameObject.AddComponent(new Collider(new  RectMask(80,80,40,40),ENEMY_GROUP, BULLET_ENEMY_MASK | PLAYER_MASK));
+        this.gameObject.AddComponent(new Collider(new CircleMask(50,50,50),ENEMY_GROUP, BULLET_ENEMY_MASK | PLAYER_MASK));
         this.gameObject.CenterBySprite();
         this.sprite = this.gameObject.GetComponent('Sprite');
 
@@ -457,24 +457,24 @@ class MainScene extends Scene
         */
 
 
-        let matrixB = new Matrix2D();
-        matrixB.identity();
-        matrixB.translate(mouseX,mouseY);
+        // let matrixB = new Matrix2D();
+        // matrixB.identity();
+        // matrixB.translate(mouseX,mouseY);
 
         
-        this.polyB.transform(this.gamePlayer.transform.matrix);
-        this.polyA.transform(matrixB);
+        // this.polyB.transform(this.gamePlayer.transform.matrix);
+        // this.polyA.transform(matrixB);
 
-        if (this.polyA.collide(this.polyB))
-        {
-           stroke(255,0,0);
-        } else 
-        {
-            stroke(0,255,0);
-        }
+        // if (this.polyA.collide(this.polyB))
+        // {
+        //    stroke(255,0,0);
+        // } else 
+        // {
+        //     stroke(0,255,0);
+        // }
 
-        this.polyA.render();
-        this.polyB.render();
+        // this.polyA.render();
+        // this.polyB.render();
 
        
 
