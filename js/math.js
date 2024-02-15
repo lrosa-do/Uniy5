@@ -775,6 +775,14 @@ class Matrix2D
 	{
 		return new Vector2(this.a * x + this.c * y + this.tx, this.b * x + this.d * y + this.ty);
 	}
+
+	set_pointTransform(x, y, to)
+	{
+		to.x = this.a * x + this.c * y + this.tx;
+		to.y = this.b * x + this.d * y + this.ty;
+		return to;
+	}
+	
 	clone()
 	{
 		return new Matrix2D().set(this.a, this.b, this.c, this.d, this.tx, this.ty);

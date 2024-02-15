@@ -144,6 +144,7 @@ class Component
     {
         this.type = type;
         this.gameObject = null;
+        this.is_ready = false;
     }
 
     ready()
@@ -162,6 +163,10 @@ class Component
     }
 
     render()
+    {
+
+    }
+    post_render()
     {
 
     }
@@ -261,6 +266,8 @@ class Sprite extends Component
         this.red=255;
         this.green=255;
         this.blue=255;
+        this.width= image.width;
+        this.height= image.height;
     }
 
     SetOffSet(x, y)
@@ -272,6 +279,8 @@ class Sprite extends Component
     SetClip(x, y, width, height)
     {
         this.clip.set(x, y, width, height);
+        this.width = width;
+        this.height = height;
         this.useClip = true;
     }
 
@@ -290,6 +299,154 @@ class Sprite extends Component
     }
 }
 
+class Mask 
+{
+    constructor(type,off_x,off_y)
+    {
+        this.type=type;
+        this.off_x = off_x || 0;
+        this.off_y = off_y || 0;
+     
+    }
+}
+
+class CircleMask extends Mask
+{
+    constructor(radius,off_x,off_y)
+    {
+        super('Circle',off_x,off_y);
+        this.radius = radius;
+
+    }
+}
+
+class RectMask extends Mask
+{
+    constructor(width, height,off_x,off_y)
+    {
+        super('Rect',off_x,off_y);
+        this.width = width;
+        this.height = height;
+    }
+}
+
+
+function same_group_and_mask(group, mask, other)
+{
+    return (group & other.group) > 0 && (mask & other.id_mask) > 0;
+}
+
+class Collider extends Component
+{
+    constructor(mask, group, id_mask)
+    {
+        super('Collider');
+        this.mask=mask;
+        this.pivot = new Vector2(0,0);
+        this.group =  group || 1;
+        this.id_mask= id_mask || 1;
+        this.is_trigger = false;
+
+    }
+
+    ready()
+    {
+        this.gameObject.collide =true;
+    }
+    // render()
+    // {
+    //     noFill();
+    //     stroke("red");
+    //     if (this.mask.type === 'Circle')
+    //     {
+    //         circle(this.mask.off_x, this.mask.off_y, this.mask.radius*2);
+    //         circle(this.pivot.x, this.pivot.y, this.mask.radius*2);
+    //     } else 
+    //     if (this.mask.type === 'Rect')
+    //     {
+    //         rect(this.mask.off_x, this.mask.off_y, this.mask.width, this.mask.height);
+    //         rect(this.pivot.x, this.pivot.y, this.mask.width, this.mask.height);
+    //     }
+    // }
+
+
+    getPivot()
+    {
+        //this.pivot = this.gameObject.matrix.set_pointTransform(this.mask.off_x, this.mask.off_y, this.mask.pivot);
+        this.pivot.x = -this.mask.off_x + this.gameObject.transform.position.x;
+        this.pivot.y = -this.mask.off_y + this.gameObject.transform.position.y;
+        return this.pivot;
+    }
+
+
+ 
+    collide(other)
+    {
+        if (!same_group_and_mask(this.group, this.id_mask, other))
+        {
+        let pointA = this.getPivot();
+        let pointB = other.getPivot();
+        let x = pointA.x;
+        let y = pointA.y;
+        let other_x = pointB.x;
+        let other_y = pointB.y;
+       
+
+            if (this.mask.type === 'Circle')
+            {
+                if (other.mask.type === 'Circle')
+                {
+                    return CircleInCircle(x, y, this.mask.radius, other_x, other_y, other.mask.radius);
+                }
+                if (other.mask.type === 'Rect')
+                {
+                    return CircleInRect(x, y, this.mask.radius, other_x, other_y, other.mask.width, other.mask.height);
+                }
+            } else
+            if (this.mask.type === 'Rect')
+            {
+                if (other.mask.type === 'Circle')
+                {
+                    return CircleInRect(other_x, other_y, other.mask.radius, x, y, this.mask.width, this.mask.height);
+                }
+                if (other.mask.type === 'Rect')
+                {
+                    return RectInRect(x, y, this.mask.width, this.mask.height, other_x, other_y, other.mask.width, other.mask.height);
+                }
+            }
+        }
+
+        return false;
+    
+    }
+    collidet_at(x,y,other)
+    {
+        let other_x = other.gameObject.transform.position.x;
+        let other_y = other.gameObject.transform.position.y;
+        if (this.mask.type === 'Circle')
+        {
+            if (other.mask.type === 'Circle')
+            {
+                return CircleInCircle(x, y, this.mask.radius, other_x, other_y, other.mask.radius);
+            }
+            if (other.mask.type === 'Rect')
+            {
+                return CircleInRect(x, y, this.mask.radius, other_x, other_y, other.mask.width, other.mask.height);
+            }
+        } else 
+        if (this.mask.type === 'Rect')
+        {
+            if (other.mask.type === 'Circle')
+            {
+                return CircleInRect(other_x, other_y, other.mask.radius, x, y, this.mask.width, this.mask.height);
+            }
+            if (other.mask.type === 'Rect')
+            {
+                return RectInRect(x, y, this.mask.width, this.mask.height, other_x, other_y, other.mask.width, other.mask.height);
+            }
+        }
+    }
+}
 
 class Transform extends Component
 {
@@ -375,6 +532,21 @@ class Transform extends Component
 	
 }
 
+class ScriptComponent extends Component
+{
+    constructor()
+    {
+        super('Script');
+    }
+    OnCollisionEnter(other)
+    {
+
+    }
+    OnCollisionExit(other)
+    {
+
+    }
+}
 
 
 
@@ -385,28 +557,33 @@ class GameObject
         this.tag = '';
         this.name = name;
         this.is_done = false;
+        this.collide = false;
         this.visible = true;
         this.active = true;
         this.parent = null;
+       
         this.bound = new Bound(0,0,1,1);
         this.worldBound = new Bound(0,0,1,1);
         this.components={};
         this.componentsList=[]; 
         this.children=[];
         this.transform = new Transform();
+        this.matrix = this.transform.getTransform();
         this.debug = false;
         this.scene = null;
-    }
-
-    done()
-    {
-
+        this.is_ready =false;
     }
 
     ready()
     {
 
     }
+    
+    done()
+    {
+
+    }
+   
 
     GetWorldPoint(x,y)
     {
@@ -485,19 +662,30 @@ class GameObject
         return this.components[type];
     }
 
+    ContainsComponent(type)
+    {
+        return this.components[type] != null;
+    }
+
 
 
     update(dt)
     {
+        for (let i in this.components)
+        {
+            if (!this.components[i].is_ready)
+            {
+                this.components[i].ready();
+                this.components[i].is_ready = true;
+            }
+            this.components[i].update(dt);
+        }
+
+        this.matrix = this.transform.getTransform();
         for (let child of this.children)
         {
             child.update(dt);
         }
-        for (let i in this.components)
-        {
-            this.components[i].update(dt);
-        }
-        
     }
 
     process()
@@ -521,7 +709,7 @@ class GameObject
        push();
         
       // this.transform.rotation += 1;
-        let matrix = this.transform.getTransform();
+        let matrix = this.matrix;// this.transform.getTransform();
         this.worldBound = matrix.transformBoundTo(this.bound, this.worldBound);
 
         applyMatrix(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
@@ -531,7 +719,8 @@ class GameObject
         
         for (let i in this.components)
         {
-            this.components[i].render();
+        
+                this.components[i].render();
         }
         
         for (let child of this.children)
@@ -547,6 +736,12 @@ class GameObject
             rect(this.bound.x, this.bound.y, this.bound.width, this.bound.height);
         }
         pop();
+       
+        for (let i in this.components)
+        {
+            this.components[i].post_render();
+        }
+
         if (this.debug)
         {
        
@@ -554,19 +749,12 @@ class GameObject
             stroke("blue");
             rect(this.worldBound.x, this.worldBound.y, this.worldBound.width, this.worldBound.height);
         }
+
+       
     }
-    OnReady()
+    Destroy()
     {
-      
-        for (let child of this.children)
-        {
-            child.OnReady();
-        }
-        for (let i in this.components)
-        {
-            this.components[i].ready();
-        }
-        this.ready();
+        this.is_done = true;
     }
 }
 
@@ -631,7 +819,50 @@ class Scene
 
     }
 
-
+    Collisions()
+    {
+        for (let i = 0; i < this.gameObjects.length - 1; i++)
+        {
+            for (let j = i + 1; j < this.gameObjects.length; j++)
+            {
+                if (this.gameObjects[i].collide && this.gameObjects[j].collide)
+                {
+                    let ColliderA = this.gameObjects[i].GetComponent('Collider');
+                    let ColliderB = this.gameObjects[j].GetComponent('Collider');
+                    if (this.gameObjects[i] === this.gameObjects[j]) continue;
+                    if (ColliderA && ColliderB)
+                    {
+                        if (ColliderA.collide(ColliderB))
+                        {
+                            if (ColliderA.gameObject.ContainsComponent('Script'))
+                            {
+                                let component = ColliderA.gameObject.GetComponent('Script');
+                                component.OnCollisionEnter(ColliderB.gameObject);
+                            }
+                            if (ColliderB.gameObject.ContainsComponent('Script'))
+                            {
+                                let component = ColliderB.gameObject.GetComponent('Script');
+                                component.OnCollisionEnter(ColliderA.gameObject);
+                            }
+                        } else 
+                        {
+                            if (ColliderA.gameObject.ContainsComponent('Script'))
+                            {
+                                let component = ColliderA.gameObject.GetComponent('Script');
+                                component.OnCollisionExit(ColliderB.gameObject);
+                            }
+                            if (ColliderB.gameObject.ContainsComponent('Script'))
+                            {
+                                let component = ColliderB.gameObject.GetComponent('Script');
+                                component.OnCollisionExit(ColliderA.gameObject);
+                            }
+                        }
+                            
+                    }
+                }
+            }
+        }
+    }
 
     OnUpdate(dt)
     {
@@ -639,7 +870,7 @@ class Scene
         for (let gameObject of this.queueList)
         {
             gameObject.scene = this;
-            gameObject.OnReady();
+            gameObject.ready();
             this.gameObjects.push(gameObject);
         }
         this.queueList = [];
