@@ -326,6 +326,20 @@ class Bound
 		this.x=x;
 		this.y=y;
 	}
+	static CreateAtlasFrames(image, count_x,count_y)
+	{
+		let w = image.width /count_x;
+		let h = image.height/count_y;
+		let bounds = [];
+		for (let y=0;y<count_y;y++)
+		{
+			for (let x=0;x<count_x;x++)
+			{
+				bounds.push(new Bound(x*w,y*h,w,h));
+			}
+		}
+		return bounds;
+	}
 }
 
 class Vector2 

@@ -18,6 +18,10 @@ class Action
     {
        
     }
+    render()
+    {
+
+    }
     start()
     {
         
@@ -32,7 +36,65 @@ class Action
     }
 }
 
-
+class AnimationAction extends Action
+{
+    constructor(x,y, w,h,image, frames, speed, loop)
+    {
+        super('Animation');
+        this.image = image;
+        this.frames = frames;
+        this.speed = speed / 1000;
+        this.loop = loop;
+        this.currentFrame = 0;
+        this.count = frames.length;
+        this.x = x;
+        this.y = y;
+        this.width = w;
+        this.height = h;
+    }
+    start()
+    {
+        this.elapsed = 0;
+        this.finished = false;
+        this.play=true;
+        this.OnStart();
+    }
+    update(dt)
+    {
+        if (this.finished || this.done || !this.play) return;
+        this.elapsed += dt;
+        if (this.elapsed >= this.speed)
+        {
+            this.elapsed = 0;
+            this.currentFrame++;
+            if (this.currentFrame >= this.count)
+            {
+                if (this.loop)
+                {
+                    this.currentFrame = 0;
+                    this.OnComplete();
+                   
+                } else 
+                {
+                   
+                    this.OnComplete();
+                    this.remove();                
+                }
+            }
+            this.OnProgress(this.currentFrame);
+       }
+    }
+    
+    render()
+    {
+ 
+        if (this.finished || this.done || !this.play) return;
+        let frame = this.frames[this.currentFrame];
+       // image(this.image,this.x,this.y);// 
+        image(this.image,this.x,this.y, this.width, this.height, frame.x, frame.y, frame.width, frame.height);
+    
+    }
+}
 
 class Tween extends Action
 {
@@ -148,6 +210,10 @@ class Component
     }
 
     ready()
+    {
+
+    }
+    done()
     {
 
     }
@@ -754,6 +820,10 @@ class GameObject
     }
     Destroy()
     {
+        for (let i in this.components)
+        {
+            this.components[i].done();
+        }
         this.is_done = true;
     }
 }
@@ -1013,6 +1083,11 @@ class Game
         
         if (Game.currentScene)
             Game.currentScene.OnRender();
+    
+        for (let i = 0; i < Game.actions.length; i++)
+        {          
+            Game.actions[i].render();
+        }
     }
 
     static ChangeScene(name)

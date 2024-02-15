@@ -99,6 +99,16 @@ class EnemyScript extends ScriptComponent
         
     }
 
+    done()
+    {
+        let image =  Game.GetImage('explosion');
+        let frames = Bound.CreateAtlasFrames(image, 5, 5);
+        let x = this.gameObject.transform.position.x-40  * this.size;
+        let y = this.gameObject.transform.position.y-40  * this.size;
+        let anim = new AnimationAction(x,y,80,80,image,frames, 10.1,false);
+        anim.start();
+    }
+
 
     update(dt)
     {
@@ -337,6 +347,8 @@ class MainScene extends Scene
         this.rightCano = Rightcano;
         
         this.createEnemy();
+
+       
 
       
         
