@@ -326,10 +326,10 @@ class Bound
 		this.x=x;
 		this.y=y;
 	}
-	static CreateAtlasFrames(image, count_x,count_y)
+	static CreateAtlasFrames(width,height, count_x,count_y)
 	{
-		let w = image.width /count_x;
-		let h = image.height/count_y;
+		let w = width /count_x;
+		let h = height/count_y;
 		let bounds = [];
 		for (let y=0;y<count_y;y++)
 		{

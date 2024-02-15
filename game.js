@@ -9,7 +9,7 @@ const ENEMY_MASK = 2;
 const BULLET_PLAYER_MASK = 3;
 const BULLET_ENEMY_MASK = 4;
 
-
+const explosion_frames = Bound.CreateAtlasFrames(1024,1024, 5, 5);
 
 
 class PlayerScript extends ScriptComponent
@@ -102,10 +102,9 @@ class EnemyScript extends ScriptComponent
     done()
     {
         let image =  Game.GetImage('explosion');
-        let frames = Bound.CreateAtlasFrames(image, 5, 5);
         let x = this.gameObject.transform.position.x-40  * this.size;
         let y = this.gameObject.transform.position.y-40  * this.size;
-        let anim = new AnimationAction(x,y,80,80,image,frames, 10.1,false);
+        let anim = new AnimationAction(x,y,90* this.size , 90 * this.size,image,explosion_frames, 25,false);
         anim.start();
     }
 

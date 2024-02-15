@@ -38,12 +38,14 @@ class Action
 
 class AnimationAction extends Action
 {
-    constructor(x,y, w,h,image, frames, speed, loop)
+    constructor(x,y, w,h,image, frames, fps, loop)
     {
         super('Animation');
         this.image = image;
         this.frames = frames;
-        this.speed = speed / 1000;
+        this.fps = fps; 
+        this.interval = (1000 / fps) / 1000; 
+      
         this.loop = loop;
         this.currentFrame = 0;
         this.count = frames.length;
@@ -63,7 +65,7 @@ class AnimationAction extends Action
     {
         if (this.finished || this.done || !this.play) return;
         this.elapsed += dt;
-        if (this.elapsed >= this.speed)
+        if (this.elapsed >= this.interval)
         {
             this.elapsed = 0;
             this.currentFrame++;
