@@ -236,7 +236,7 @@ class BulletScript extends ScriptComponent
         this.gameObject.transform.rotation = this.angle -90;
         this.gameObject.AddComponent(new Deletor(10));
         this.gameObject.AddComponent(new Sprite(Game.GetImage('bullet_orange')));
-        this.gameObject.AddComponent(new Collider(new CircleMask(10,0,0),PLAYER_GROUP,BULLET_PLAYER_MASK));
+        this.gameObject.AddComponent(new Collider(new RectMask(8,30,0,0),PLAYER_GROUP,BULLET_PLAYER_MASK));
 
         let action1 = new TweenProperty(this.gameObject.transform.scale, 'x', 0.1, 2, 2, Ease.Linear);
         action1.start();
@@ -347,11 +347,11 @@ class MainScene extends Scene
         
         this.createEnemy();
 
-        this.polyA=new Polygon();
-        this.polyA.setBox(25, 25,50,50);
+        // this.polyA=new Polygon();
+        // this.polyA.setBox(25, 25,50,50);
 
-        this.polyB=new Polygon();
-        this.polyB.setCircle(50, 50, 50,8);
+        // this.polyB=new Polygon();
+        // this.polyB.setCircle(50, 50, 50,8);
 
        
 
