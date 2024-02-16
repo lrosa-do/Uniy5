@@ -7,7 +7,7 @@ const Height = window.innerHeight;
 
 
 let progress = 0;
-let totalResources = 5; 
+let totalResources = 6; 
 let loadComplete = false;
 let barWidth = 200;
 let barHeight = 20;
@@ -30,8 +30,17 @@ function preload()
          Game.LoadImage('assets/explosion.png', 'explosion');
          progress++;
 
-         Game.LoadImage('assets/bullet_2_orange.png', 'bullet_orange');
-         progress++;
+
+        Game.LoadImage('assets/bullet_2_blue.png', 'bullet_blue');
+        progress++;
+
+        Game.LoadImage('assets/bullet_2_orange.png', 'bullet_orange');
+        progress++;
+
+
+        Game.LoadImage('assets/wabbit_alpha.png', 'wabbit');
+        progress++;
+
   
        
    
@@ -79,8 +88,10 @@ function setup()
    // textSize(24);
    
     Game.Init();
+
     Game.AddScene(new MainScene(), 'MainScene');
-    Game.ChangeScene('MainScene');
+    Game.AddScene(new CollideScene(), 'CollideScene');
+    Game.ChangeScene('CollideScene');
 }
 
 

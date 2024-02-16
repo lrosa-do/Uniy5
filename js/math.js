@@ -631,12 +631,12 @@ class Polygon
 			line(this.worldVertices[i].x,this.worldVertices[i].y,this.worldVertices[next].x,this.worldVertices[next].y);
 		}
 		//stroke(255,0,0);
-		for (let i=0;i<this.vertices.length;i++)
-		{
-			let next = i+1;
-			if (next == this.vertices.length) next = 0;
-			line(this.vertices[i].x,this.vertices[i].y,this.vertices[next].x,this.vertices[next].y);
-		}
+		// for (let i=0;i<this.vertices.length;i++)
+		// {
+		// 	let next = i+1;
+		// 	if (next == this.vertices.length) next = 0;
+		// 	line(this.vertices[i].x,this.vertices[i].y,this.vertices[next].x,this.vertices[next].y);
+		// }
 
 
 	}

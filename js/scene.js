@@ -1,4 +1,10 @@
 "use strict";
+const FLAG_NONE = 0;
+const FLAG_ACTIVE = 1;
+const FLAG_VISIBLE = 2;
+const FLAG_COLLIDE = 4;
+const FLAG_COLLIDE_EXIT = 8;
+const FLAG_COLLIDE_ENTER = 16;
 
 class Action 
 {
@@ -441,20 +447,18 @@ class RectMask extends Mask
 }
 
 
-function same_group_and_mask(group, mask, other)
-{
-    return (group & other.group) > 0 && (mask & other.id_mask) > 0;
-}
+
 
 class Collider extends Component
 {
-    constructor(mask, group, id_mask)
+    constructor(mask, collisionGroup, collisionMask)
     {
         super('Collider');
-        this.mask=mask;
+        this.mask  = mask;
         this.pivot = new Vector2(0,0);
-        this.group =  group || 1;
-        this.id_mask= id_mask || 1;
+        this.collisionGroup =  collisionGroup ;
+        this.collisionMask  = collisionMask ;
+        this.groupIndex = -1;
         this.is_trigger = false;
 
     }
@@ -463,63 +467,16 @@ class Collider extends Component
     {
         this.gameObject.collide =true;
     }
-    // render()
-    // {
-    //     noFill();
-    //     stroke("red");
-    //     if (this.mask.type === 'Circle')
-    //     {
-    //         circle(this.mask.off_x, this.mask.off_y, this.mask.radius*2);
-    //         circle(this.pivot.x, this.pivot.y, this.mask.radius*2);
-    //     } else 
-    //     if (this.mask.type === 'Rect')
-    //     {
-    //         rect(this.mask.off_x, this.mask.off_y, this.mask.width, this.mask.height);
-    //         rect(this.pivot.x, this.pivot.y, this.mask.width, this.mask.height);
-    //     }
-    // }
-
-
-
 
  
     collide(other)
     {
-        if (!same_group_and_mask(this.group, this.id_mask, other))
+        if(!((this.collisionGroup & other.collisionMask) !== 0 && (other.collisionGroup & this.collisionMask) !== 0))
         {
-            let matA = this.gameObject.matrix;
-            let matB = other.gameObject.matrix;
-            this.mask.poly.transform(matA);
-            other.mask.poly.transform(matB);
-
-            return this.mask.poly.collide(other.mask.poly);
-       
-
-            // if (this.mask.type === 'Circle')
-            // {
-            //     if (other.mask.type === 'Circle')
-            //     {
-            //         return CircleInCircle(x, y, this.mask.radius, other_x, other_y, other.mask.radius);
-            //     }
-            //     if (other.mask.type === 'Rect')
-            //     {
-            //         return CircleInRect(x, y, this.mask.radius, other_x, other_y, other.mask.width, other.mask.height);
-            //     }
-            // } else
-            // if (this.mask.type === 'Rect')
-            // {
-            //     if (other.mask.type === 'Circle')
-            //     {
-            //         return CircleInRect(other_x, other_y, other.mask.radius, x, y, this.mask.width, this.mask.height);
-            //     }
-            //     if (other.mask.type === 'Rect')
-            //     {
-            //         return RectInRect(x, y, this.mask.width, this.mask.height, other_x, other_y, other.mask.width, other.mask.height);
-            //     }
-            // }
+           
+            return false;
         }
-
-        return false;
+        return this.mask.poly.collide(other.mask.poly);
     
     }
     collidet_at(x,y,other)
@@ -649,6 +606,10 @@ class ScriptComponent extends Component
     {
 
     }
+    OnCollision(other)
+    {
+
+    }
 }
 
 
@@ -664,7 +625,7 @@ class GameObject
         this.visible = true;
         this.active = true;
         this.parent = null;
-       
+        this.isColliding = false;
         this.bound = new Bound(0,0,1,1);
         this.worldBound = new Bound(0,0,1,1);
         this.components={};
@@ -675,6 +636,7 @@ class GameObject
         this.debug = false;
         this.scene = null;
         this.is_ready =false;
+        this.flags = FLAG_NONE;
     }
 
     ready()
@@ -785,6 +747,11 @@ class GameObject
         }
 
         this.matrix = this.transform.getTransform();
+        if (this.ContainsComponent('Collider'))
+        {
+            let col = this.GetComponent('Collider');
+            col.mask.poly.transform(this.matrix);
+        }
         for (let child of this.children)
         {
             child.update(dt);
@@ -853,14 +820,14 @@ class GameObject
             rect(this.worldBound.x, this.worldBound.y, this.worldBound.width, this.worldBound.height);
         }
 
-        // let col =this.GetComponent('Collider');
-        // if (col)
-        // {
-        //  //   col.mask.poly.transform(matrix);
-        //    stroke("blue");
-        //     col.mask.poly.render();
+        let col =this.GetComponent('Collider');
+        if (col)
+        {
+           // col.mask.poly.transform(matrix);
+          //  stroke("blue");
+          //  col.mask.poly.render();
             
-        // }
+        }
 
 
        
@@ -873,7 +840,25 @@ class GameObject
         }
         this.is_done = true;
     }
+    IsFlag(flag)
+    {
+        return (this.flags & flag) > 0;
+    }
+    AddFlag(flag)
+    {
+        this.flags |= flag;
+    }
+    ClearFlags()
+    {
+        this.flags = FLAG_NONE;
+    }
+    ClearFlag(flag )
+    {
+        this.flags &= ~flag;
+    }
 }
+
+
 
 class Scene
 {
@@ -936,50 +921,115 @@ class Scene
 
     }
 
+
     Collisions()
     {
-        for (let i = 0; i < this.gameObjects.length - 1; i++)
+        let collisions=[];
+        let processList=[];
+        for (let i = 0; i < this.gameObjects.length - 1; i++) 
         {
-            for (let j = i + 1; j < this.gameObjects.length; j++)
+            const objA = this.gameObjects[i];
+            for (let j = i + 1; j < this.gameObjects.length; j++) 
             {
-                if (this.gameObjects[i].collide && this.gameObjects[j].collide)
+                const objB = this.gameObjects[j];
+                if (objA === objB) continue;
+                if (objA.collide && objB.collide) 
                 {
-                    let ColliderA = this.gameObjects[i].GetComponent('Collider');
-                    let ColliderB = this.gameObjects[j].GetComponent('Collider');
-                    if (this.gameObjects[i] === this.gameObjects[j]) continue;
-                    if (ColliderA && ColliderB)
+                    let ColliderA = objA.GetComponent('Collider');
+                    let ColliderB = objB.GetComponent('Collider');
+
+                    if (ColliderA.collide(ColliderB))
                     {
-                        if (ColliderA.collide(ColliderB))
+
+                        objA.isColliding = true;
+                        objB.isColliding = true;
+
+                        if (!objA.IsFlag(FLAG_COLLIDE_ENTER))
                         {
-                            if (ColliderA.gameObject.ContainsComponent('Script'))
+                            objA.flags |= FLAG_COLLIDE_ENTER;
+                            objA.flags &= ~FLAG_COLLIDE;
+                            if (objA.ContainsComponent('Script'))
                             {
-                                let component = ColliderA.gameObject.GetComponent('Script');
-                                component.OnCollisionEnter(ColliderB.gameObject);
-                            }
-                            if (ColliderB.gameObject.ContainsComponent('Script'))
-                            {
-                                let component = ColliderB.gameObject.GetComponent('Script');
-                                component.OnCollisionEnter(ColliderA.gameObject);
-                            }
-                        } else 
-                        {
-                            if (ColliderA.gameObject.ContainsComponent('Script'))
-                            {
-                                let component = ColliderA.gameObject.GetComponent('Script');
-                                component.OnCollisionExit(ColliderB.gameObject);
-                            }
-                            if (ColliderB.gameObject.ContainsComponent('Script'))
-                            {
-                                let component = ColliderB.gameObject.GetComponent('Script');
-                                component.OnCollisionExit(ColliderA.gameObject);
+                                    let component = objA.GetComponent('Script');
+                                    component.OnCollisionEnter(objB);
                             }
                         }
-                            
-                    }
+
+                        if (!objB.IsFlag(FLAG_COLLIDE_ENTER))
+                        {
+                            objB.flags |= FLAG_COLLIDE_ENTER;
+                            objB.flags &= ~FLAG_COLLIDE;
+                            if (objB.ContainsComponent('Script'))
+                            {
+                                    let component = objB.GetComponent('Script');
+                                    component.OnCollisionEnter(objA);
+                                
+                            }              
+                        }
+                        collisions.push({a:objA, b:objB});
+                     } else 
+                    {
+                        if (objA.isColliding && objB.isColliding)
+                        {
+                            processList.push({a:objA, b:objB});
+                            objA.isColliding = false;
+                            objB.isColliding = false;
+                        }
+                     }
                 }
             }
         }
+        for (let i = 0; i < collisions.length; i++)
+        {
+            let a = collisions[i].a;
+            let b = collisions[i].b;
+            a.flags |= FLAG_COLLIDE;
+            b.flags |= FLAG_COLLIDE;
+            if (a.ContainsComponent('Script'))
+            {
+                let component = a.GetComponent('Script');
+                 component.OnCollision(b);                
+            }
+            if (b.ContainsComponent('Script'))
+            {
+                let component = b.GetComponent('Script');
+                component.OnCollision(a);                
+            }           
+        }  
+
+   
+        
+       for (let i = 0; i < processList.length; i++) 
+       {
+        let a = processList[i].a;
+        let b = processList[i].b;
+
+        if (!a.isColliding && a.IsFlag(FLAG_COLLIDE_ENTER)) 
+        {
+            if (a.ContainsComponent('Script')) 
+            {
+                let component = a.GetComponent('Script');
+                component.OnCollisionExit(b);
+            }
+            a.flags &= ~FLAG_COLLIDE_ENTER; 
+        }
+
+        if (!b.isColliding && b.IsFlag(FLAG_COLLIDE_ENTER)) 
+        {
+            if (b.ContainsComponent('Script')) 
+            {
+                let component = b.GetComponent('Script');
+                component.OnCollisionExit(a);
+            }
+            b.flags &= ~FLAG_COLLIDE_ENTER; 
+        }
+
+     //  console.log(collisions.length + ' ' + processList.length);
     }
+
+    }
+
+
 
     OnUpdate(dt)
     {

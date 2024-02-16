@@ -1,13 +1,18 @@
 "use strict";
 
 
-const PLAYER_GROUP = 1;
-const ENEMY_GROUP = 2;
+const GROUP_PLAYER          = Math.pow(2,0);
+const GROUP_BULLET_PLAYER   = Math.pow(2,1);
+const GROUP_BULLET_ENEMY    = Math.pow(2,2);
+const GROUP_ENEMY           = Math.pow(2,3);
 
-const PLAYER_MASK = 1;
-const ENEMY_MASK = 2;
-const BULLET_PLAYER_MASK = 3;
-const BULLET_ENEMY_MASK = 4;
+const MASK_PLAYER = GROUP_BULLET_ENEMY | GROUP_ENEMY;
+const MASK_BULLET_PLAYER = GROUP_ENEMY;
+const MASK_BULLET_ENEMY = GROUP_PLAYER;
+const MASK_ENEMY = GROUP_PLAYER | GROUP_BULLET_PLAYER;
+const MASK_ALL = GROUP_PLAYER | GROUP_BULLET_PLAYER | GROUP_BULLET_ENEMY | GROUP_ENEMY;
+
+
 
 const explosion_frames = Bound.CreateAtlasFrames(1024,1024, 5, 5);
 
@@ -25,7 +30,7 @@ class PlayerScript extends ScriptComponent
     ready()
     {
         console.log('PlayerScript ready');
-        this.gameObject.AddComponent(new Collider(new CircleMask(50,50,50)),PLAYER_GROUP,BULLET_PLAYER_MASK | ENEMY_MASK);
+        this.gameObject.AddComponent(new Collider(new CircleMask(50,50,50),GROUP_PLAYER, MASK_PLAYER));
         this.gameObject.AddComponent(new Sprite(Game.GetImage('player')));
         this.gameObject.CenterBySprite();
 
@@ -84,13 +89,14 @@ class EnemyScript extends ScriptComponent
     ready()
     {
         this.player = this.gameObject.scene.Find('Player');
-        this.gameObject.AddComponent(new Sprite(Game.GetImage('ufo')));
-        this.gameObject.AddComponent(new Collider(new CircleMask(50,50,50),ENEMY_GROUP, BULLET_ENEMY_MASK | PLAYER_MASK));
+        this.sprite = new Sprite(Game.GetImage('ufo'));
+        this.gameObject.AddComponent(this.sprite);
+        this.gameObject.AddComponent(new Collider(new CircleMask(50,50,50), GROUP_ENEMY, MASK_ENEMY ));
         this.gameObject.CenterBySprite();
-        this.sprite = this.gameObject.GetComponent('Sprite');
+       
 
     }
-    OnCollisionEnter(other)
+    OnCollision(other)
     {
         this.hit=true;
         this.is_paint=true;
@@ -225,9 +231,24 @@ class BulletScript extends ScriptComponent
 
     OnCollisionEnter(other)
     {
-         this.gameObject.Destroy();
+       //  this.gameObject.Destroy();
+     //  console.log('BulletScript OnCollisionEnter');
     }
 
+    OnCollisionExit(other)
+    {
+       
+      //  console.log('BulletScript OnCollisionExit');
+      // 
+    }
+
+    OnCollision(other)
+    {
+      //  this.gameObject.Destroy();
+      //  this.gameObject.Destroy();
+      //  console.log('BulletScript OnCollision');
+        this.gameObject.Destroy();
+    }
     ready()
     {
 
@@ -236,7 +257,7 @@ class BulletScript extends ScriptComponent
         this.gameObject.transform.rotation = this.angle -90;
         this.gameObject.AddComponent(new Deletor(10));
         this.gameObject.AddComponent(new Sprite(Game.GetImage('bullet_orange')));
-        this.gameObject.AddComponent(new Collider(new RectMask(8,30,0,0),PLAYER_GROUP,BULLET_PLAYER_MASK));
+        this.gameObject.AddComponent(new Collider(new RectMask(8,30,0,0),GROUP_BULLET_PLAYER, MASK_BULLET_PLAYER));
 
         let action1 = new TweenProperty(this.gameObject.transform.scale, 'x', 0.1, 2, 2, Ease.Linear);
         action1.start();
@@ -439,46 +460,275 @@ class MainScene extends Scene
         textAlign(LEFT, CENTER);
         let fps =int( frameRate());
         text(` ${fps}  ${this.name} ${this.Count()}`, 20, 20);
-
-
-
-
-
-
-        /*
-
-        this.matrix.identity();
-			this.matrix.translate(this.position.x, this.position.y);
-			let spin = RAD(this.rotation);
-			this.matrix.rotate(spin);
-			this.matrix.scale(this.scale.x, this.scale.y);
-			this.matrix.skew(this.skew.x, this.skew.y);
-			this.matrix.translate(-this.origin.x, -this.origin.y);
-        */
-
-
-        // let matrixB = new Matrix2D();
-        // matrixB.identity();
-        // matrixB.translate(mouseX,mouseY);
-
-        
-        // this.polyB.transform(this.gamePlayer.transform.matrix);
-        // this.polyA.transform(matrixB);
-
-        // if (this.polyA.collide(this.polyB))
-        // {
-        //    stroke(255,0,0);
-        // } else 
-        // {
-        //     stroke(0,255,0);
-        // }
-
-        // this.polyA.render();
-        // this.polyB.render();
-
-       
+    
 
         
     }
 }
 
+
+
+/*
+
+
+const GROUP_PLAYER          = Math.pow(2,0);
+const GROUP_BULLET_PLAYER   = Math.pow(2,1);
+const GROUP_BULLET_ENEMY    = Math.pow(2,2);
+const GROUP_ENEMY           = Math.pow(2,3);
+
+const MASK_PLAYER = GROUP_BULLET_ENEMY | GROUP_ENEMY;
+const MASK_BULLET_PLAYER = GROUP_ENEMY;
+const MASK_BULLET_ENEMY = GROUP_PLAYER;
+const MASK_ENEMY = GROUP_PLAYER | GROUP_BULLET_PLAYER;
+const MASK_ALL = GROUP_PLAYER | GROUP_BULLET_PLAYER | GROUP_BULLET_ENEMY | GROUP_ENEMY;
+*/
+
+const  PLAYER = Math.pow(2,0);
+const  ENEMY =  Math.pow(2,1);
+
+class Bunny extends ScriptComponent
+{
+    constructor()
+    {
+        super();
+        this.speed = new Vector2(RandomFloat(2,8),RandomFloat(5,8));
+        this.hit=false;
+        this.last_x=0;
+        this.last_y=0;
+        
+    
+    }
+
+    ready()
+    {
+
+  
+
+        
+        this.sprite =new Sprite(Game.GetImage('wabbit'));
+        this.gameObject.AddComponent(this.sprite);
+        this.width =  this.sprite.width;
+        this.height = this.sprite.height;
+
+      ///  this.gameObject.transform.position.x = 25 + this.width;
+       // this.gameObject.transform.position.y = 25 + this.height ;
+
+    this.gameObject.AddComponent(new Collider(new RectMask(this.width,this.height,0,0),PLAYER, ENEMY  ));
+        this.gameObject.CenterBySprite();
+
+    }
+
+    OnCollisionEnter(other)
+    {
+   //  console.log('Bunny OnCollisionEnter');  
+     this.hit=true; 
+     this.last_x = this.gameObject.transform.position.x;
+     this.last_y = this.gameObject.transform.position.y;
+     this.sprite.red=255;
+     this.sprite.green=0;
+     this.sprite.blue=0;
+
+    }
+
+    OnCollisionExit(other)
+    {
+       this.hit=false;
+       this.sprite.red=255;
+              this.sprite.green=255;
+              this.sprite.blue=255;
+
+      // console.log('Bunny OnCollisionExit');
+      // this.gameObject.transform.position.x = this.last_x;
+     //  this.gameObject.transform.position.y = this.last_y;
+        // this.speed.x *= -1;
+        // this.speed.y *= -1;
+    }
+    
+    OnCollision(other)
+    {
+      //  console.log('Bunny OnCollision');
+        
+    
+    }
+    render()
+    {
+
+    //     if (this.hit)
+    //     {
+    //        this.sprite.red=255;
+    //        this.sprite.green=0;
+    //        this.sprite.blue=0;
+    //        }
+    //    else
+    //    {
+    //        this.sprite.red=255;
+    //        this.sprite.green=255;
+    //        this.sprite.blue=255;
+    //    }
+    }
+
+    update(dt)
+    {
+
+    
+        
+        if (this.gameObject.transform.position.x > Width - this.width || this.gameObject.transform.position.x < 0)
+        {
+            this.speed.x *= -1;
+        }
+
+        if (this.gameObject.transform.position.y > Height - this.height || this.gameObject.transform.position.y < 0)
+        {
+            this.speed.y *= -1;
+        }
+
+        this.gameObject.transform.position.x += this.speed.x;
+        this.gameObject.transform.position.y += this.speed.y;
+
+      
+    }
+}
+
+
+class Zaka extends ScriptComponent
+{
+    constructor()
+    {
+        super();
+      
+        
+    
+    }
+
+    ready()
+    {
+
+  
+
+        
+        this.sprite =new Sprite(Game.GetImage('wabbit'));
+        this.gameObject.AddComponent(this.sprite);
+        this.width =  this.sprite.width;
+        this.height = this.sprite.height;
+
+      ///  this.gameObject.transform.position.x = 25 + this.width;
+       // this.gameObject.transform.position.y = 25 + this.height ;
+
+        this.gameObject.AddComponent(new Collider(new RectMask(this.width,this.height,0,0), ENEMY,  PLAYER));
+        this.gameObject.CenterBySprite();
+
+    }
+
+    OnCollisionEnter(other)
+    {
+  
+     this.sprite.red=255;
+     this.sprite.green=0;
+     this.sprite.blue=0;
+    // console.log('Zaka OnCollisionEnter');
+
+    }
+
+    OnCollisionExit(other)
+    {
+      
+             this.sprite.red=255;
+              this.sprite.green=255;
+              this.sprite.blue=255;
+            //  console.log('Zaka OnCollisionExit');
+
+    }
+    
+    OnCollision(other)
+    {
+      //  console.log('Bunny OnCollision');
+     // console.log('Zaka OnCollision');
+        
+    
+    }
+    render()
+    {
+
+    }
+
+    update(dt)
+    {
+
+    
+      
+      
+    }
+}
+
+class CollideScene extends Scene
+{
+
+
+    AddBunny(x,y)
+    {
+        let bunny = new GameObject("Bunny");
+        bunny.transform.position.x = x || RandomInt(0,Width);
+        bunny.transform.position.y = y || RandomInt(0,Height);
+        bunny.AddComponent(new Bunny());
+        this.Add(bunny);
+    }
+    AddZaka(x,y)
+    {
+        let zaka = new GameObject("Zaka");
+        zaka.transform.position.x = x ;
+        zaka.transform.position.y = y ;
+        zaka.AddComponent(new Zaka());
+        this.Add(zaka);
+        return zaka;
+    }
+    ready()
+    {
+       
+        this.totalTime=0.0;
+        let count = 20;
+        for (let i=0; i<count; i++)
+        {
+            for (let j=0; j<count; j++)
+            {
+                this.AddZaka(10+i*50, 10+j*50);
+            }
+           
+        }
+      this.AddBunny();
+        this.AddBunny();
+      this.normalCollision= true;
+      this.zaka_mouse = this.AddZaka(width/2,height/2);
+      
+    }
+
+    update(dt)
+    {
+        if (mouseIsPressed)
+        {
+            this.zaka_mouse.transform.position.x = mouseX;
+            this.zaka_mouse.transform.position.y = mouseY;
+        }
+
+        if (keyIsPressed)
+        {
+            this.normalCollision= !this.normalCollision;
+        }
+
+        let timeStart = performance.now();
+        this.Collisions();
+        this.totalTime = performance.now()-timeStart;
+    }
+
+    render()
+    {
+        
+        fill(255);
+        textSize(14);
+        textAlign(LEFT, CENTER);
+        let fps =int( frameRate());
+        text(` ${fps}  ${this.totalTime} ${this.Count()}  ${ this.normalCollision} `, 20, 20);
+    
+
+        
+    }
+}
