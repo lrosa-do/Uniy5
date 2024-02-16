@@ -84,8 +84,6 @@ function setup()
 
     
 
-   // textFont('Courier New');
-   // textSize(24);
    
     Game.Init();
 

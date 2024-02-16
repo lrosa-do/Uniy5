@@ -736,6 +736,7 @@ class GameObject
 
     update(dt)
     {
+        this.matrix = this.transform.getTransform();
         for (let i in this.components)
         {
             if (!this.components[i].is_ready)
@@ -746,7 +747,7 @@ class GameObject
             this.components[i].update(dt);
         }
 
-        this.matrix = this.transform.getTransform();
+       
         if (this.ContainsComponent('Collider'))
         {
             let col = this.GetComponent('Collider');
@@ -780,7 +781,7 @@ class GameObject
         
       // this.transform.rotation += 1;
         let matrix = this.matrix;// this.transform.getTransform();
-        this.worldBound = matrix.transformBoundTo(this.bound, this.worldBound);
+        this.worldBound = matrix.transformBoundRef(this.bound, this.worldBound);
 
         applyMatrix(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
       //  context.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty);
@@ -820,14 +821,17 @@ class GameObject
             rect(this.worldBound.x, this.worldBound.y, this.worldBound.width, this.worldBound.height);
         }
 
-        let col =this.GetComponent('Collider');
-        if (col)
-        {
-           // col.mask.poly.transform(matrix);
-          //  stroke("blue");
-          //  col.mask.poly.render();
+        // let col =this.GetComponent('Collider');
+        // if (col)
+        // {
+        //    col.mask.poly.transform(matrix);
+        //     stroke("blue");
+        //    let boudn = col.mask.poly.worldBounds;
+        //    rect(boudn.x, boudn.y, boudn.width, boudn.height);
+
+        //    col.mask.poly.render();
             
-        }
+        // }
 
 
        
@@ -920,10 +924,43 @@ class Scene
     {
 
     }
+    CollisionsBasic()
+    {
+        for (let i = 0; i < this.gameObjects.length - 1; i++) 
+        {
+            const objA = this.gameObjects[i];
+            for (let j = i + 1; j < this.gameObjects.length; j++) 
+            {
+                const objB = this.gameObjects[j];
+                if (objA === objB) continue;
+                if (objA.collide && objB.collide) 
+                {
+                    let ColliderA = objA.GetComponent('Collider');
+                    let ColliderB = objB.GetComponent('Collider');
 
+                    if (ColliderA.collide(ColliderB))
+                    {
+                       
+                        if (objA.ContainsComponent('Script'))
+                        {
+                            let component = objA.GetComponent('Script');
+                             component.OnCollision(objB);                
+                        }
+                        if (objB.ContainsComponent('Script'))
+                        {
+                            let component = objB.GetComponent('Script');
+                            component.OnCollision(objA);                
+                        }           
+                    }
+                }
+            }
+        }
+    }
 
     Collisions()
     {
+        
+        return;
         let collisions=[];
         let processList=[];
         for (let i = 0; i < this.gameObjects.length - 1; i++) 

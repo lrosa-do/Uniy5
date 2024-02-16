@@ -685,7 +685,7 @@ class CollideScene extends Scene
     {
        
         this.totalTime=0.0;
-        let count = 20;
+        let count = 10;
         for (let i=0; i<count; i++)
         {
             for (let j=0; j<count; j++)

@@ -326,6 +326,20 @@ class Bound
 		this.x=x;
 		this.y=y;
 	}
+	addPoint(x,y)
+	{
+		if (x < this.x) this.x = x;
+		if (y < this.y) this.y = y;
+		if (x > this.x + this.width) this.width = x - this.x;
+		if (y > this.y + this.height) this.height = y - this.y;
+	}
+	addVector(v)
+	{
+		if (v.x < this.x) this.x = v.x;
+		if (v.y < this.y) this.y = v.y;
+		if (v.x > this.x + this.width) this.width = v.x - this.x;
+		if (v.y > this.y + this.height) this.height = v.y - this.y;
+	}
 	static CreateAtlasFrames(width,height, count_x,count_y)
 	{
 		let w = width /count_x;
@@ -586,6 +600,8 @@ class Polygon
 	{
 		this.vertices = [];
 		this.worldVertices = [];
+		this.bounds = new Bound(0,0,0,0);
+		this.worldBounds = new Bound(0,0,0,0);
 	}
 	setBox(x,y,w,h)
 	{
@@ -597,28 +613,39 @@ class Polygon
 		this.worldVertices.push(new Vector2(x+w,y));
 		this.worldVertices.push(new Vector2(x+w,y+h));
 		this.worldVertices.push(new Vector2(x,y+h));
+		this.bounds.addVector(this.vertices[0]);
+		this.bounds.addVector(this.vertices[1]);
+		this.bounds.addVector(this.vertices[2]);
+		this.bounds.addVector(this.vertices[3]);
+
 	}
 	setCircle(x,y,radius,segments)
 	{
 		let angle = PI2 / segments;
 		for (let i=0;i<segments;i++)
 		{
-			this.vertices.push(new Vector2(x+Math.cos(angle*i)*radius,y+Math.sin(angle*i)*radius));
-			this.worldVertices.push(new Vector2(x+Math.cos(angle*i)*radius,y+Math.sin(angle*i)*radius));
+			let v = new Vector2(x+Math.cos(angle*i)*radius,y+Math.sin(angle*i)*radius);
+			this.vertices.push(v);
+			this.worldVertices.push(v);
+			this.bounds.addVector(v);
 		}
 	}
 	transform(mat)
 	{
+		mat.transformBoundRef(this.bounds, this.worldBounds);
+
 		for (let i=0;i<this.vertices.length;i++)
 		{
-			this.worldVertices[i] = mat.transformPoint(this.vertices[i].x,this.vertices[i].y);
-			//this.worldVertices[i] = mat.set_pointTransform(this.vertices[i].x,this.vertices[i].y,this.vertices[i]);
+		
+			 mat.transformVectorRef(this.vertices[i], this.worldVertices[i]);
 		}
 	}
 	addPoint(x,y)
 	{
-		this.vertices.push(new Vector2(x,y));
-		this.worldVertices.push(new Vector2(x,y));
+		let v = new Vector2(x,y);
+		this.vertices.push(v);
+		this.worldVertices.push(v);
+		this.bounds.addPoint(x,y);
 	}
 
 	render ()
@@ -642,8 +669,12 @@ class Polygon
 	}
 	collide(p)
 	{
-		return SAT(this.worldVertices,p.worldVertices);
-	
+		if (this.worldBounds.intersects(p.worldBounds) )
+		{
+			return SAT(this.worldVertices,p.worldVertices);
+		}
+	//	return SAT(this.worldVertices,p.worldVertices);
+		return false;
 	}
 }
 
@@ -911,12 +942,21 @@ class Matrix2D
 		return new Vector2(this.a * x + this.c * y + this.tx, this.b * x + this.d * y + this.ty);
 	}
 
-	set_pointTransform(x, y, to)
+	transformRef(x, y, to)
 	{
 		to.x = this.a * x + this.c * y + this.tx;
 		to.y = this.b * x + this.d * y + this.ty;
 		return to;
 	}
+
+	transformVectorRef(v, to)
+	{
+		to.x = this.a * v.x + this.c * v.y + this.tx;
+		to.y = this.b * v.x + this.d * v.y + this.ty;
+		return to;
+	}
+
+	
 	
 	clone()
 	{
@@ -1014,7 +1054,7 @@ class Matrix2D
 		let maxY = Math.max(y0, y1, y2, y3);
 		return new Bound(minX, minY, maxX - minX, maxY - minY);
 	}
-	transformBoundTo(bound,to)
+	transformBoundRef(bound,to)
 	{
 		let x = bound.x;
 		let y = bound.y;
